@@ -1,0 +1,7 @@
+{
+  "provider": "MVOLA_MOCK",
+  "phoneNumber": "0340000000",
+  "amount": 15000.00,
+  "currency": "MGA",
+  "description": "Docker test - MVola mock"
+}

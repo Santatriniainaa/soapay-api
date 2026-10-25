@@ -77,23 +77,23 @@ Après le démarrage :
 - Spécification OpenAPI : `http://localhost:8080/v3/api-docs`
 - Santé : `http://localhost:8080/actuator/health`
 
-## Exemple
+## Charger le jeu de données de démonstration
 
-Utilisez uniquement les valeurs fictives ci-dessous :
+Les exemples de paiement et de remboursement sont dans [`examples/payments/`](examples/payments/) et [`examples/refunds/`](examples/refunds/). Après le démarrage de Compose, ce script envoie les trois paiements puis un remboursement partiel pour chacun, via l’API authentifiée :
 
 ```bash
-curl --request POST 'http://localhost:8080/api/v1/apis' \
-   --user 'demo-client:change-me-client' \
-   --header 'Content-Type: application/json' \
-   --header 'Idempotency-Key: demo-api-001' \
-   --data '{
-      "provider": "MVOLA_MOCK",
-      "phoneNumber": "0340000000",
-      "amount": 15000.00,
-      "currency": "MGA",
-      "description": "Paiement expérimental"
-   }'
+bash examples/load-demo-data.sh
 ```
+
+Les clés d’idempotence sont stables : relancer le script ne crée pas de doublons. Les identifiants HTTP Basic sont lus depuis le conteneur API et les données insérées restent simulées.
+
+Pour afficher toutes les tables, toutes leurs colonnes, les lignes des tables métier et l’historique Flyway :
+
+```bash
+docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < examples/database/inspect.sql
+```
+
+PostgreSQL contient les tables `api_transactions`, `api_refunds` et `flyway_schema_history`. Flyway crée et versionne le schéma ; les endpoints de paiement et de remboursement créent les données métier. `docker compose down` conserve le volume `postgres_data`; `docker compose down -v` le supprime ainsi que toutes les données.
 
 ## Tests
 

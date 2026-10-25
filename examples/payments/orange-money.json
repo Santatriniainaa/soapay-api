@@ -1,0 +1,7 @@
+{
+  "provider": "ORANGE_MONEY_MOCK",
+  "phoneNumber": "0320000000",
+  "amount": 22000.00,
+  "currency": "MGA",
+  "description": "Docker test - Orange Money mock"
+}

@@ -1,0 +1,7 @@
+{
+  "provider": "AIRTEL_MONEY_MOCK",
+  "phoneNumber": "0330000000",
+  "amount": 7500.00,
+  "currency": "MGA",
+  "description": "Docker test - Airtel Money mock"
+}
