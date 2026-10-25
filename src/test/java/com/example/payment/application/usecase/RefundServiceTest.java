@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,6 +105,25 @@ class RefundServiceTest {
         var response = service.create(payment.reference(), request("25.00", "duplicate"), "refund-key", "client-1");
 
         assertEquals(existing.reference(), response.refundReference());
+        verify(refunds, never()).save(any());
+        verify(transactions, never()).save(any());
+    }
+
+    @Test
+    void repeatedRequestFindsRefundCreatedWhileWaitingForPaymentLock() {
+        PaymentRefund existing = PaymentRefund.completed("refund-key", "client-1", payment.reference(),
+                new BigDecimal("25.00"), "Remboursement test");
+        AtomicInteger lookupCount = new AtomicInteger();
+        when(refunds.findByClientAndKey("client-1", "refund-key"))
+            .thenAnswer(invocation -> lookupCount.getAndIncrement() == 0
+                ? Optional.empty()
+                : Optional.of(existing));
+
+        var response = service.create(payment.reference(), request("25.00"), "refund-key", "client-1");
+
+        assertEquals(existing.reference(), response.refundReference());
+        verify(transactions).findByReferenceAndClientForUpdate(payment.reference(), "client-1");
+        verify(refunds, never()).sumRefunded(any());
         verify(refunds, never()).save(any());
         verify(transactions, never()).save(any());
     }
