@@ -1,4 +1,4 @@
-CREATE TABLE payment_transactions (
+CREATE TABLE api_transactions (
     id UUID PRIMARY KEY,
     transaction_reference VARCHAR(32) NOT NULL UNIQUE,
     idempotency_key VARCHAR(128) NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE payment_transactions (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
     completed_at TIMESTAMP WITH TIME ZONE,
     version BIGINT NOT NULL DEFAULT 0,
-    CONSTRAINT uq_payment_client_idempotency UNIQUE (client_id, idempotency_key)
+    CONSTRAINT uq_api_client_idempotency UNIQUE (client_id, idempotency_key)
 );
 
-CREATE INDEX idx_payment_client_created ON payment_transactions (client_id, created_at DESC);
+CREATE INDEX idx_api_client_created ON api_transactions (client_id, created_at DESC);

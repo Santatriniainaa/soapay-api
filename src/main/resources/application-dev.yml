@@ -5,9 +5,9 @@ spring:
     password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-payment:
+api:
   simulation:
-    result: ${PAYMENT_SIMULATION_RESULT:SUCCESS}
+    result: ${API_SIMULATION_RESULT:SUCCESS}
 
 demo:
   security:

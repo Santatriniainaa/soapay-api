@@ -35,15 +35,15 @@ management:
 logging:
   level:
     root: INFO
-    '[com.example.payment]': INFO
+    '[com.soapay.api]': INFO
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-# Valeurs de démonstration réservées au profil local/test.
-payment:
+# Identifiants Basic factices réservés aux profils local/dev. Prod utilise un fournisseur OIDC.
+api:
   simulation:
-    result: ${PAYMENT_SIMULATION_RESULT:SUCCESS}
+    result: ${API_SIMULATION_RESULT:SUCCESS}
 demo:
   security:
     client:
@@ -59,7 +59,7 @@ spring:
   config:
     activate:
       on-profile: test
-payment:
+api:
   simulation:
     result: SUCCESS
 demo:
@@ -82,9 +82,9 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-payment:
+api:
   simulation:
-    result: ${PAYMENT_SIMULATION_RESULT:SUCCESS}
+    result: ${API_SIMULATION_RESULT:SUCCESS}
 demo:
   security:
     client:
@@ -95,7 +95,7 @@ demo:
       password: ${DEMO_ADMIN_PASSWORD}
 
 ---
-# PROD : identifiants externes obligatoires, PostgreSQL et simulation désactivée.
+# PROD : PostgreSQL, fournisseur d'identité OIDC et simulation désactivée.
 # Aucun adaptateur opérateur réel n'est fourni : ce profil ne réalise aucun paiement réel.
 spring:
   config:
@@ -106,14 +106,11 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-payment:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH_ISSUER_URI}
+api:
   simulation:
     enabled: false
-demo:
-  security:
-    client:
-      username: ${DEMO_CLIENT_USERNAME}
-      password: ${DEMO_CLIENT_PASSWORD}
-    admin:
-      username: ${DEMO_ADMIN_USERNAME}
-      password: ${DEMO_ADMIN_PASSWORD}
