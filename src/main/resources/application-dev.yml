@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+payment:
+  simulation:
+    result: ${PAYMENT_SIMULATION_RESULT:SUCCESS}
+
+demo:
+  security:
+    client:
+      username: ${DEMO_CLIENT_USERNAME}
+      password: ${DEMO_CLIENT_PASSWORD}
+    admin:
+      username: ${DEMO_ADMIN_USERNAME}
+      password: ${DEMO_ADMIN_PASSWORD}

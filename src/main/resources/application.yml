@@ -1,0 +1,119 @@
+spring:
+  application:
+    name: soapay
+  profiles:
+    # Par défaut, les exécutions locales et les tests utilisent H2.
+    default: local
+  # Configuration H2 utilisée pour local et test ; les données sont volatiles.
+  datasource:
+    url: jdbc:h2:mem:soapay_db;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time-zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+server:
+  port: ${SERVER_PORT:8080}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+logging:
+  level:
+    root: INFO
+    '[com.example.payment]': INFO
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Valeurs de démonstration réservées au profil local/test.
+payment:
+  simulation:
+    result: ${PAYMENT_SIMULATION_RESULT:SUCCESS}
+demo:
+  security:
+    client:
+      username: ${DEMO_CLIENT_USERNAME:demo-client}
+      password: ${DEMO_CLIENT_PASSWORD:change-me-client}
+    admin:
+      username: ${DEMO_ADMIN_USERNAME:demo-admin}
+      password: ${DEMO_ADMIN_PASSWORD:change-me-admin}
+
+---
+# TEST : les tests gardent H2 et utilisent des identifiants fixes non réutilisables en production.
+spring:
+  config:
+    activate:
+      on-profile: test
+payment:
+  simulation:
+    result: SUCCESS
+demo:
+  security:
+    client:
+      username: test-client
+      password: test-client-password
+    admin:
+      username: test-admin
+      password: test-admin-password
+
+---
+# DEV : PostgreSQL, par exemple via Docker Compose ; variables DATABASE_* et DEMO_* requises.
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+payment:
+  simulation:
+    result: ${PAYMENT_SIMULATION_RESULT:SUCCESS}
+demo:
+  security:
+    client:
+      username: ${DEMO_CLIENT_USERNAME}
+      password: ${DEMO_CLIENT_PASSWORD}
+    admin:
+      username: ${DEMO_ADMIN_USERNAME}
+      password: ${DEMO_ADMIN_PASSWORD}
+
+---
+# PROD : identifiants externes obligatoires, PostgreSQL et simulation désactivée.
+# Aucun adaptateur opérateur réel n'est fourni : ce profil ne réalise aucun paiement réel.
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+payment:
+  simulation:
+    enabled: false
+demo:
+  security:
+    client:
+      username: ${DEMO_CLIENT_USERNAME}
+      password: ${DEMO_CLIENT_PASSWORD}
+    admin:
+      username: ${DEMO_ADMIN_USERNAME}
+      password: ${DEMO_ADMIN_PASSWORD}
