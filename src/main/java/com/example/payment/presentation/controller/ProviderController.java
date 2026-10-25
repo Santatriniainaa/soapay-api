@@ -52,7 +52,7 @@ public class ProviderController {
     private static PaymentProvider parseProvider(String value) {
         try {
             return PaymentProvider.valueOf(value);
-        } catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException | NullPointerException exception) {
             throw new PaymentException(
                 "UNKNOWN_PROVIDER",
                 "Fournisseur inconnu", 

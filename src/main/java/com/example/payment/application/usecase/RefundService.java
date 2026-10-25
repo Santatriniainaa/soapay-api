@@ -31,22 +31,22 @@ public class RefundService {
             throw new PaymentException("IDEMPOTENCY_KEY_REQUIRED", "L'en-tête Idempotency-Key est requis (128 caractères maximum)", 400);
         }
 
-        var existing = refunds.findByClientAndKey(clientId, key);
+        var existing = findMatchingRequest(paymentReference, request, key, clientId);
         if (existing.isPresent()) {
-            PaymentRefund prior = existing.get();
-            boolean sameRequest = prior.transactionReference().equals(paymentReference)
-                    && prior.amount().compareTo(request.amount()) == 0
-                    && Objects.equals(prior.reason(), request.reason());
-            if (!sameRequest) {
-                throw new PaymentException("IDEMPOTENCY_KEY_REUSED", "Cette clé a déjà été utilisée avec un contenu différent", 409);
-            }
-            return toResponse(prior);
+            return toResponse(existing.get());
         }
 
         var payment = transactions.findByReferenceAndClientForUpdate(paymentReference, clientId)
                 .orElseThrow(() -> new PaymentException("TRANSACTION_NOT_FOUND", "Transaction introuvable", 404));
 
-        // The payment row lock serializes refund operations for this transaction.
+        // Recheck under the payment lock: another request with this key may have
+        // completed while this request waited for the lock.
+        existing = findMatchingRequest(paymentReference, request, key, clientId);
+        if (existing.isPresent()) {
+            return toResponse(existing.get());
+        }
+
+        // The payment row lock serializes distinct refund keys for this transaction.
         if (payment.status() != PaymentStatus.SUCCESS && payment.status() != PaymentStatus.PARTIALLY_REFUNDED) {
             throw new PaymentException("REFUND_NOT_ALLOWED", "Seule une transaction réussie peut être remboursée", 409);
         }
@@ -85,5 +85,25 @@ public class RefundService {
     private static RefundResponse toResponse(PaymentRefund refund) {
         return new RefundResponse(refund.reference(), refund.transactionReference(), refund.amount(), refund.status(),
                 true, refund.reason(), refund.createdAt(), refund.processedAt());
+    }
+
+    private java.util.Optional<PaymentRefund> findMatchingRequest(
+            String paymentReference, CreateRefundRequest request, String key, String clientId) {
+        var existing = refunds.findByClientAndKey(clientId, key);
+        if (existing.isEmpty()) {
+            return existing;
+        }
+
+        PaymentRefund prior = existing.get();
+        boolean sameRequest = prior.transactionReference().equals(paymentReference)
+                && prior.amount().compareTo(request.amount()) == 0
+                && Objects.equals(prior.reason(), request.reason());
+        if (!sameRequest) {
+            throw new PaymentException(
+                    "IDEMPOTENCY_KEY_REUSED",
+                    "Cette clé a déjà été utilisée avec un contenu différent",
+                    409);
+        }
+        return existing;
     }
 }

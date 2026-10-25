@@ -2,6 +2,7 @@ package com.example.payment.presentation.advice;
 
 import com.example.payment.domain.exception.PaymentException;
 
+import jakarta.validation.ConstraintViolationException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -9,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -27,7 +30,13 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(exception.getHttpStatus()).body(error);
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
+    @ExceptionHandler({
+            MethodArgumentNotValidException.class,
+            HttpMessageNotReadableException.class,
+            HandlerMethodValidationException.class,
+            MissingRequestHeaderException.class,
+            ConstraintViolationException.class
+    })
     public ResponseEntity<ApiError> handleValidation(Exception exception, HttpServletRequest request) {
         String message;
         if (exception instanceof MethodArgumentNotValidException validation) {
@@ -37,8 +46,12 @@ public class ApiExceptionHandler {
                 .findFirst()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .orElse("Requête invalide");
+        } else if (exception instanceof MissingRequestHeaderException missingHeader) {
+            message = "En-tête requis manquant : " + missingHeader.getHeaderName();
         } else {
-            message = "Corps JSON invalide";
+            message = exception instanceof HttpMessageNotReadableException
+                    ? "Corps JSON invalide"
+                    : "Requête invalide";
         }
 
         ApiError error = new ApiError(
@@ -51,8 +64,8 @@ public class ApiExceptionHandler {
         ApiError error = new ApiError(
             Instant.now(),
             409,
-            "IDEMPOTENCY_OR_UNIQUENESS_CONFLICT",
-            "Une opération identique ou conflictuelle existe déjà",
+            "DATA_INTEGRITY_CONFLICT",
+            "La requête entre en conflit avec les données existantes",
             request.getRequestURI());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
@@ -68,6 +81,6 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
-        public record ApiError(Instant timestamp, int status, String code, String message, String path) {
-        }
+    public record ApiError(Instant timestamp, int status, String code, String message, String path) {
+    }
 }

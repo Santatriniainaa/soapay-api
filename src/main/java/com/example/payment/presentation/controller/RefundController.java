@@ -30,7 +30,7 @@ public class RefundController {
 
     @PostMapping("/payments/{reference}/refunds")
     @ResponseStatus(HttpStatus.CREATED)
-        public RefundResponse create(
+    public RefundResponse create(
             @PathVariable String reference,
             @Valid @RequestBody CreateRefundRequest request,
             @RequestHeader(name = "Idempotency-Key", required = false) String key,

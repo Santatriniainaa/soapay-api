@@ -64,7 +64,7 @@ public class PaymentService {
             throw new PaymentException("INVALID_PHONE_NUMBER", "Le numéro fictif n'est pas valide", 422);
         }
 
-            PaymentTransaction tx = PaymentTransaction.create(
+        PaymentTransaction tx = PaymentTransaction.create(
                 key,
                 clientId,
                 request.provider(),
@@ -76,22 +76,22 @@ public class PaymentService {
         tx = switch (result) {
             case SUCCESS -> tx.transitionTo(PaymentStatus.SUCCESS, null, null);
             case PENDING -> tx.transitionTo(PaymentStatus.PENDING, null, null);
-                case FAILED -> tx.transitionTo(
+            case FAILED -> tx.transitionTo(
                     PaymentStatus.FAILED, "SIMULATED_DECLINE", "Refus simulé par le fournisseur");
-                case TIMEOUT -> tx.transitionTo(
+            case TIMEOUT -> tx.transitionTo(
                     PaymentStatus.FAILED, "SIMULATED_TIMEOUT", "Délai simulé dépassé");
         };
         return toResponse(store.save(tx));
     }
 
-            private static void validateIdempotencyKey(String key) {
-            if (key == null || key.isBlank() || key.length() > 128) {
-                throw new PaymentException(
+    private static void validateIdempotencyKey(String key) {
+        if (key == null || key.isBlank() || key.length() > 128) {
+            throw new PaymentException(
                     "IDEMPOTENCY_KEY_REQUIRED",
                     "L'en-tête Idempotency-Key est requis (128 caractères maximum)",
                     400);
-            }
-            }
+        }
+    }
 
     @Transactional(readOnly = true)
     public PaymentResponse get(String reference, String clientId) {
