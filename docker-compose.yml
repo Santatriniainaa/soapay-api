@@ -1,0 +1,45 @@
+name: soapay-api
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-soapay_db}
+      POSTGRES_USER: ${POSTGRES_USER:-soapay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-demo-only}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-soapay} -d ${POSTGRES_DB:-soapay_db}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-soapay_db}
+      DATABASE_USERNAME: ${POSTGRES_USER:-soapay}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-local-demo-only}
+      SERVER_PORT: 8080
+      PAYMENT_SIMULATION_RESULT: ${PAYMENT_SIMULATION_RESULT:-SUCCESS}
+      DEMO_CLIENT_USERNAME: ${DEMO_CLIENT_USERNAME:-demo-client}
+      DEMO_CLIENT_PASSWORD: ${DEMO_CLIENT_PASSWORD:-change-me-client}
+      DEMO_ADMIN_USERNAME: ${DEMO_ADMIN_USERNAME:-demo-admin}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-change-me-admin}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+volumes:
+  postgres_data:
