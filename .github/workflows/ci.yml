@@ -2,7 +2,16 @@ name: SoaPay CI
 
 on:
   push:
+    branches:
+      - main
+      - staging
+      - develop
+      - 'feature/**'
   pull_request:
+    branches:
+      - main
+      - staging
+      - develop
   workflow_dispatch:
 
 permissions:
