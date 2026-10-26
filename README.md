@@ -12,6 +12,7 @@ SoaPay est une API REST de démonstration pour simuler des paiements et rembours
 
 - [Architecture métier](docs/ARCHITECTURE_METIER.md) : couches, flux, états et invariants.
 - [Cahier de charge](docs/CAHIER_DE_CHARGE.md) : périmètre, rôles, routes et critères d’acceptation.
+- [Déploiement Render + Neon](docs/DEPLOYMENT_RENDER_NEON.md) : procédure manuelle et variables de production.
 - [Contribution](CONTRIBUTING.md)
 
 ## Démarrage rapide
