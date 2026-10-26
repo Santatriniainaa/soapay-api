@@ -13,7 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ApiCreationAttemptService {
     private final ApiTransactionStore store;
 
-    public ApiCreationAttemptService(ApiTransactionStore store) {
+    public ApiCreationAttemptService(
+            ApiTransactionStore store) {
         this.store = store;
     }
 
@@ -39,12 +40,22 @@ public class ApiCreationAttemptService {
         tx = store.saveAndFlush(tx);
         SimulationResult result = provider.simulateApi(request.phoneNumber(), request.amount());
         tx = switch (result) {
-            case SUCCESS -> tx.transitionTo(ApiStatus.SUCCESS, null, null);
-            case PENDING -> tx.transitionTo(ApiStatus.PENDING, null, null);
+            case SUCCESS -> tx.transitionTo(
+                ApiStatus.SUCCESS, 
+                null, 
+                null);
+            case PENDING -> tx.transitionTo(
+                ApiStatus.PENDING, 
+                null, 
+                null);
             case FAILED -> tx.transitionTo(
-                    ApiStatus.FAILED, "SIMULATED_DECLINE", "Refus simulé par le fournisseur");
+                    ApiStatus.FAILED, 
+                    "SIMULATED_DECLINE", 
+                    "Refus simulé par le fournisseur");
             case TIMEOUT -> tx.transitionTo(
-                    ApiStatus.FAILED, "SIMULATED_TIMEOUT", "Délai simulé dépassé");
+                    ApiStatus.FAILED, 
+                    "SIMULATED_TIMEOUT", 
+                    "Délai simulé dépassé");
         };
         return store.save(tx);
     }

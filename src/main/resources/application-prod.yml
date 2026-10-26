@@ -4,11 +4,23 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DATABASE_POOL_MAX_SIZE:5}
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${OAUTH_ISSUER_URI}
+security:
+  keycloak:
+    api-client-id: ${KEYCLOAK_API_CLIENT_ID}
+  jwt:
+    audience: ${OIDC_AUDIENCE}
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
 
 api:
   simulation:

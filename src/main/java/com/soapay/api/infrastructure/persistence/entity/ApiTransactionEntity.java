@@ -18,41 +18,58 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "api_transactions", indexes = {
-        @Index(name = "idx_api_client_created", columnList = "client_id, created_at")
+        @Index(name = "idx_api_client_created", 
+                columnList = "client_id, created_at")
 })
 public class ApiTransactionEntity {
     @Id
     private UUID id;
+
     @Column(name = "transaction_reference", nullable = false, unique = true, length = 32)
     private String reference;
+
     @Column(name = "idempotency_key", nullable = false, length = 128)
     private String idempotencyKey;
+
     @Column(name = "client_id", nullable = false, length = 100)
     private String clientId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private ApiProvider provider;
+
     @Column(name = "phone_number", nullable = false, length = 16)
     private String phoneNumber;
+
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal amount;
+
     @Column(nullable = false, length = 3)
     private String currency;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private ApiStatus status;
+
     @Column(length = 255)
     private String description;
+
     @Column(name = "failure_code", length = 64)
     private String failureCode;
+
     @Column(name = "failure_message", length = 255)
     private String failureMessage;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+
     @Column(name = "completed_at")
     private Instant completedAt;
+    
     @Version
     private long version;
 

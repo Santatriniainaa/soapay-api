@@ -25,7 +25,8 @@ import java.util.List;
 public class RefundController {
     private final RefundService refundService;
 
-    public RefundController(RefundService refundService) {
+    public RefundController(
+            RefundService refundService) {
         this.refundService = refundService;
     }
 
@@ -44,11 +45,19 @@ public class RefundController {
                                     Authentication authentication,
                                     @RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "20") int size) {
-        return refundService.list(reference, authentication.getName(), page, size);
+        return refundService.list(
+                reference, 
+                authentication.getName(), 
+                page, 
+                size);
     }
 
     @GetMapping("/refunds/{refundReference}")
-    public RefundResponse get(@PathVariable String refundReference, Authentication authentication) {
-        return refundService.get(refundReference, authentication.getName());
+    public RefundResponse get(
+            @PathVariable String refundReference, 
+            Authentication authentication) {
+        return refundService.get(
+                refundReference, 
+                authentication.getName());
     }
 }

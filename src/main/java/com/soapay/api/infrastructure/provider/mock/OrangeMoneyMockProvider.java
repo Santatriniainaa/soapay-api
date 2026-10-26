@@ -8,8 +8,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class OrangeMoneyMockProvider extends AbstractMockProvider {
-    public OrangeMoneyMockProvider(@Value("${api.simulation.result:SUCCESS}") SimulationResult result,
-                                   @Value("${api.simulation.enabled:true}") boolean enabled) {
-        super(ApiProvider.ORANGE_MONEY_MOCK, result, enabled);
+    public OrangeMoneyMockProvider(
+            @Value("${api.simulation.result:SUCCESS}") SimulationResult result,
+            @Value("${api.simulation.enabled:true}") boolean enabled) {
+        super(
+            ApiProvider.ORANGE_MONEY_MOCK, 
+            result, 
+            enabled);
     }
 }
