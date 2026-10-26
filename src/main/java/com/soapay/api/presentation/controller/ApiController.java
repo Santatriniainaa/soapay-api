@@ -26,38 +26,56 @@ import java.util.List;
 public class ApiController {
     private final ApiService apiService;
 
-    public ApiController(ApiService apiService) {
+    public ApiController(
+            ApiService apiService) {
         this.apiService = apiService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse create(@Valid @RequestBody CreateApiRequest request,
-                                  @RequestHeader(name = "Idempotency-Key", required = false) String key,
-                                  Authentication authentication) {
-        return apiService.create(request, key, authentication.getName());
+    public ApiResponse create(
+            @Valid @RequestBody CreateApiRequest request,
+            @RequestHeader(name = "Idempotency-Key", required = false) String key,
+            Authentication authentication) {
+        return apiService.create(
+                request, 
+                key,
+                authentication.getName());
     }
 
     @GetMapping("/{reference}")
-    public ApiResponse get(@PathVariable String reference, Authentication authentication) {
-        return apiService.get(reference, authentication.getName());
+    public ApiResponse get(
+            @PathVariable String reference, 
+            Authentication authentication) {
+        return apiService.get(
+                reference, 
+                authentication.getName());
     }
 
     @GetMapping
-    public List<ApiResponse> list(Authentication authentication,
-                                 @RequestParam(defaultValue = "0") int page,
-                                 @RequestParam(defaultValue = "20") int size) {
-        return apiService.list(authentication.getName(), page, size);
+    public List<ApiResponse> list(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return apiService.list(
+                authentication.getName(), 
+                page, 
+                size);
     }
 
     @PostMapping("/{reference}/cancel")
-    public ApiResponse cancel(@PathVariable String reference, Authentication authentication) {
-        return apiService.cancel(reference, authentication.getName());
+    public ApiResponse cancel(
+            @PathVariable String reference, 
+            Authentication authentication) {
+        return apiService.cancel(
+                reference, 
+                authentication.getName());
     }
 
     @PostMapping("/{reference}/confirm")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEST_OPERATOR')")
-    public ApiResponse confirm(@PathVariable String reference) {
+    public ApiResponse confirm(
+            @PathVariable String reference) {
         return apiService.confirm(reference);
     }
 }
