@@ -2,9 +2,7 @@ spring:
   application:
     name: soapay
   profiles:
-    # Par défaut, les exécutions locales et les tests utilisent H2.
     default: local
-  # Configuration H2 utilisée pour local et test ; les données sont volatiles.
   datasource:
     url: jdbc:h2:mem:soapay_db;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
@@ -22,7 +20,8 @@ spring:
     enabled: true
     locations: classpath:db/migration
 server:
-  port: ${SERVER_PORT:8080}
+  address: 0.0.0.0
+  port: ${PORT:${SERVER_PORT:8080}}
 management:
   endpoints:
     web:
@@ -40,7 +39,6 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-# Identifiants Basic factices réservés aux profils local/dev. Prod utilise un fournisseur OIDC.
 api:
   simulation:
     result: ${API_SIMULATION_RESULT:SUCCESS}
@@ -54,7 +52,6 @@ demo:
       password: ${DEMO_ADMIN_PASSWORD:change-me-admin}
 
 ---
-# TEST : les tests gardent H2 et utilisent des identifiants fixes non réutilisables en production.
 spring:
   config:
     activate:
@@ -72,7 +69,6 @@ demo:
       password: test-admin-password
 
 ---
-# DEV : PostgreSQL, par exemple via Docker Compose ; variables DATABASE_* et DEMO_* requises.
 spring:
   config:
     activate:
@@ -95,8 +91,6 @@ demo:
       password: ${DEMO_ADMIN_PASSWORD}
 
 ---
-# PROD : PostgreSQL, fournisseur d'identité OIDC et simulation désactivée.
-# Aucun adaptateur opérateur réel n'est fourni : ce profil ne réalise aucun paiement réel.
 spring:
   config:
     activate:

@@ -34,7 +34,13 @@ public record ApiTransaction(
             BigDecimal amount,
             String currency,
             String description) {
-                validateDetails(key, clientId, provider, phone, amount, currency);
+                validateDetails(
+                        key, 
+                        clientId, 
+                        provider, 
+                        phone, 
+                        amount, 
+                        currency);
         Instant now = Instant.now();
         String reference = "PAY-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase();
         return new ApiTransaction(
@@ -65,11 +71,17 @@ public record ApiTransaction(
                 if (key == null || key.isBlank() || key.length() > 128
                                 || clientId == null || clientId.isBlank() || clientId.length() > 100
                                 || provider == null || phone == null || !phone.matches("03[234][0-9]{7}")) {
-                        throw new ApiException("INVALID_TRANSACTION", "Les informations du paiement sont invalides", 400);
+                        throw new ApiException(
+                                "INVALID_TRANSACTION", 
+                                "Les informations du paiement sont invalides", 
+                                400);
                 }
                 validateAmount(amount);
                 if (currency == null || !currency.matches("[A-Z]{3}")) {
-                        throw new ApiException("INVALID_CURRENCY", "La devise doit être un code ISO 4217 reconnu", 400);
+                        throw new ApiException(
+                                "INVALID_CURRENCY", 
+                                "La devise doit être un code ISO 4217 reconnu", 
+                                400);
                 }
                 try {
                         Currency.getInstance(currency);
@@ -80,29 +92,43 @@ public record ApiTransaction(
 
         private static void validateAmount(BigDecimal amount) {
                 if (amount == null || amount.signum() <= 0) {
-                        throw new ApiException("INVALID_AMOUNT", "Le montant doit être strictement positif", 400);
+                        throw new ApiException(
+                                "INVALID_AMOUNT", 
+                                "Le montant doit être strictement positif", 
+                                400);
                 }
                 if (amount.stripTrailingZeros().scale() > 2 || amount.precision() - amount.scale() > 12) {
-                        throw new ApiException("INVALID_AMOUNT_PRECISION", "Le montant doit respecter au maximum 2 décimales", 400);
+                        throw new ApiException(
+                                "INVALID_AMOUNT_PRECISION", 
+                                "Le montant doit respecter au maximum 2 décimales",
+                                400);
                 }
         }
 
     public ApiTransaction transitionTo(ApiStatus next, String errorCode, String errorMessage) {
         boolean allowed = switch (status) {
-            case CREATED -> next == ApiStatus.PENDING || next == ApiStatus.SUCCESS
-                    || next == ApiStatus.FAILED || next == ApiStatus.CANCELLED;
-            case PENDING -> next == ApiStatus.SUCCESS || next == ApiStatus.FAILED
-                    || next == ApiStatus.CANCELLED;
+            case CREATED -> next == ApiStatus.PENDING 
+                || next == ApiStatus.SUCCESS
+                || next == ApiStatus.FAILED 
+                || next == ApiStatus.CANCELLED;
+            case PENDING -> next == ApiStatus.SUCCESS 
+                || next == ApiStatus.FAILED
+                || next == ApiStatus.CANCELLED;
             case SUCCESS, PARTIALLY_REFUNDED -> next == ApiStatus.REFUND_PENDING;
-            case REFUND_PENDING -> next == ApiStatus.REFUNDED || next == ApiStatus.PARTIALLY_REFUNDED
-                    || next == ApiStatus.SUCCESS;
+            case REFUND_PENDING -> next == ApiStatus.REFUNDED 
+                || next == ApiStatus.PARTIALLY_REFUNDED
+                || next == ApiStatus.SUCCESS;
             default -> false;
         };
         if (!allowed) {
-            throw new ApiException("INVALID_STATE_TRANSITION", "Transition de statut interdite", 409);
+            throw new ApiException(
+                "INVALID_STATE_TRANSITION", 
+                "Transition de statut interdite", 
+                409);
         }
         Instant now = Instant.now();
-        boolean completed = next == ApiStatus.SUCCESS || next == ApiStatus.FAILED
+        boolean completed = next == ApiStatus.SUCCESS 
+                || next == ApiStatus.FAILED
                 || next == ApiStatus.CANCELLED;
         return new ApiTransaction(
                 id,

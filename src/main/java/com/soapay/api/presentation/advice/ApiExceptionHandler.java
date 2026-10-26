@@ -20,14 +20,18 @@ import java.time.Instant;
 @RestControllerAdvice
 public class ApiExceptionHandler {
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiError> handleApi(ApiException exception, HttpServletRequest request) {
+    public ResponseEntity<ApiError> handleApi(
+            ApiException exception, 
+            HttpServletRequest request) {
         ApiError error = new ApiError(
             Instant.now(),
             exception.getHttpStatus(),
             exception.getCode(),
             exception.getMessage(),
             request.getRequestURI());
-        return ResponseEntity.status(exception.getHttpStatus()).body(error);
+        return ResponseEntity
+                .status(exception.getHttpStatus())
+                .body(error);
     }
 
     @ExceptionHandler({
@@ -37,7 +41,9 @@ public class ApiExceptionHandler {
             MissingRequestHeaderException.class,
             ConstraintViolationException.class
     })
-    public ResponseEntity<ApiError> handleValidation(Exception exception, HttpServletRequest request) {
+    public ResponseEntity<ApiError> handleValidation(
+            Exception exception, 
+            HttpServletRequest request) {
         String message;
         if (exception instanceof MethodArgumentNotValidException validation) {
             message = validation.getBindingResult()
@@ -55,12 +61,20 @@ public class ApiExceptionHandler {
         }
 
         ApiError error = new ApiError(
-            Instant.now(), 400, "INVALID_REQUEST", message, request.getRequestURI());
-        return ResponseEntity.badRequest().body(error);
+            Instant.now(), 
+            400, 
+            "INVALID_REQUEST", 
+            message, 
+            request.getRequestURI());
+        return ResponseEntity
+                .badRequest()
+                .body(error);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiError> handleConflict(DataIntegrityViolationException exception, HttpServletRequest request) {
+    public ResponseEntity<ApiError> handleConflict(
+            DataIntegrityViolationException exception, 
+            HttpServletRequest request) {
         ApiError error = new ApiError(
             Instant.now(),
             409,
@@ -71,16 +85,25 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleUnexpected(Exception exception, HttpServletRequest request) {
+    public ResponseEntity<ApiError> handleUnexpected(
+            Exception exception, 
+            HttpServletRequest request) {
         ApiError error = new ApiError(
             Instant.now(),
             500,
             "INTERNAL_ERROR",
             "Une erreur interne est survenue",
             request.getRequestURI());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(error);
     }
 
-    public record ApiError(Instant timestamp, int status, String code, String message, String path) {
+    public record ApiError(
+            Instant timestamp, 
+            int status, 
+            String code, 
+            String message, 
+            String path) {
     }
 }

@@ -11,5 +11,6 @@ public record RefundResponse(
     boolean simulated,
     String reason,
     Instant createdAt,
-    Instant processedAt) {
+    Instant processedAt
+) {
 }

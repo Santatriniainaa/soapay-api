@@ -30,10 +30,16 @@ public class ApiCreationService {
     public ApiResponse create(CreateApiRequest request, String key, String clientId) {
         validateIdempotencyKey(key);
         if (request == null) {
-            throw new ApiException("INVALID_REQUEST", "La requête de paiement est requise", 400);
+            throw new ApiException(
+                "INVALID_REQUEST", 
+                "La requête de paiement est requise", 
+                400);
         }
         if (request.provider() == null || request.phoneNumber() == null || request.phoneNumber().isBlank()) {
-            throw new ApiException("INVALID_REQUEST", "Le fournisseur et le numéro sont requis", 400);
+            throw new ApiException(
+                "INVALID_REQUEST", 
+                "Le fournisseur et le numéro sont requis", 
+                400);
         }
         var existing = store.findByClientAndKey(clientId, key);
         if (existing.isPresent()) {
@@ -41,27 +47,45 @@ public class ApiCreationService {
         }
 
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ApiException("INVALID_AMOUNT", "Le montant doit être strictement positif", 400);
+            throw new ApiException(
+                "INVALID_AMOUNT", 
+                "Le montant doit être strictement positif", 
+                400);
         }
         if (request.amount().stripTrailingZeros().scale() > 2
                 || request.amount().precision() - request.amount().scale() > 12) {
-            throw new ApiException("INVALID_AMOUNT_PRECISION", "Le montant doit respecter au maximum 2 décimales", 400);
+            throw new ApiException(
+                "INVALID_AMOUNT_PRECISION", 
+                "Le montant doit respecter au maximum 2 décimales", 
+                400);
         }
         if (request.currency() == null || !request.currency().matches("[A-Z]{3}")) {
-            throw new ApiException("INVALID_CURRENCY", "La devise doit être un code ISO 4217 reconnu", 400);
+            throw new ApiException(
+                "INVALID_CURRENCY", 
+                "La devise doit être un code ISO 4217 reconnu", 
+                400);
         }
         try {
             java.util.Currency.getInstance(request.currency());
         } catch (IllegalArgumentException exception) {
-            throw new ApiException("INVALID_CURRENCY", "La devise doit être un code ISO 4217 reconnu", 400);
+            throw new ApiException(
+                "INVALID_CURRENCY", 
+                "La devise doit être un code ISO 4217 reconnu", 
+                400);
         }
 
         ApiProviderPort provider = providers.get(request.provider());
         if (!provider.isAvailable()) {
-            throw new ApiException("PROVIDER_UNAVAILABLE", "Fournisseur simulé indisponible", 503);
+            throw new ApiException(
+                "PROVIDER_UNAVAILABLE", 
+                "Fournisseur simulé indisponible", 
+                503);
         }
         if (!provider.isPhoneNumberValid(request.phoneNumber())) {
-            throw new ApiException("INVALID_PHONE_NUMBER", "Le numéro fictif n'est pas valide", 422);
+            throw new ApiException(
+                "INVALID_PHONE_NUMBER", 
+                "Le numéro fictif n'est pas valide", 
+                422);
         }
 
         try {
@@ -106,7 +130,14 @@ public class ApiCreationService {
             default -> "État de paiement simulé";
         };
         return new ApiResponse(
-                tx.reference(), tx.provider(), tx.amount(), tx.currency(), tx.status(), true,
-                message, tx.createdAt(), tx.updatedAt());
+                tx.reference(), 
+                tx.provider(), 
+                tx.amount(), 
+                tx.currency(), 
+                tx.status(), 
+                true,
+                message, 
+                tx.createdAt(), 
+                tx.updatedAt());
     }
 }
