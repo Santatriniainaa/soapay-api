@@ -12,8 +12,11 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -65,14 +68,24 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthoritiesClaimName("roles");
-        authoritiesConverter.setAuthorityPrefix("ROLE_");
+        JwtAuthenticationConverter jwtAuthenticationConverter(
+                        @Value("${security.keycloak.api-client-id:soapay-api}") String apiClientId) {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+                converter.setJwtGrantedAuthoritiesConverter(new KeycloakJwtGrantedAuthoritiesConverter(apiClientId));
         return converter;
     }
+
+        @Bean
+        @Profile("prod")
+        JwtDecoder productionJwtDecoder(
+                        @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuer,
+                        @Value("${security.jwt.audience}") String audience) {
+                NimbusJwtDecoder decoder = NimbusJwtDecoder.withIssuerLocation(issuer).build();
+                decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                                JwtValidators.createDefaultWithIssuer(issuer),
+                                new JwtAudienceValidator(audience)));
+                return decoder;
+        }
 
         @Bean
         PasswordEncoder passwordEncoder() {

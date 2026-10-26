@@ -11,6 +11,11 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${OAUTH_ISSUER_URI}
+security:
+  keycloak:
+    api-client-id: ${KEYCLOAK_API_CLIENT_ID}
+  jwt:
+    audience: ${OIDC_AUDIENCE}
 springdoc:
   api-docs:
     enabled: false

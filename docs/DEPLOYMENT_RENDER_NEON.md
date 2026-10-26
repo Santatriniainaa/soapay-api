@@ -36,16 +36,54 @@ DATABASE_POOL_MAX_SIZE=5
 
 Remplacez les valeurs entre chevrons dans Render. Le protocole `jdbc:postgresql` et `sslmode=require` sont nécessaires pour pgJDBC et TLS vers Neon. N’ajoutez pas `jdbc:` à la valeur HTTP `postgresql://` copiée telle quelle : reconstruisez l’URL comme ci-dessus en utilisant l’hôte pooled fourni par Neon.
 
-## 3. Préparer l’authentification OIDC
+## 3. Configurer Keycloak OIDC
 
-Le profil `prod` n’expose pas HTTP Basic ni les comptes de démonstration. Il exige un fournisseur d’identité OIDC accessible et des JWT signés.
+Le profil `prod` n’expose pas HTTP Basic ni les comptes de démonstration. Il exige un issuer Keycloak accessible publiquement en HTTPS et des JWT signés. L’application valide la signature, l’issuer et l’audience ; elle lit les rôles dans `realm_access.roles` et dans `resource_access.<KEYCLOAK_API_CLIENT_ID>.roles`. Le claim historique `roles` reste également accepté.
 
-1. Créez une application/API dans votre fournisseur OIDC.
-2. Configurez les jetons d’accès pour qu’ils contiennent `sub` et un claim `roles` sous forme de liste, par exemple `CLIENT` ou `ADMIN`.
-3. Relevez l’issuer exact du fournisseur, sans le remplacer par l’URL de l’application Render.
-4. Préparez la variable `OAUTH_ISSUER_URI` avec cette valeur exacte. Spring vérifiera la signature et l’issuer du jeton au démarrage et à chaque requête.
+### 3.1 Créer le realm et le client ressource API
 
-Sans `OAUTH_ISSUER_URI` valide, l’application en profil `prod` ne démarre pas. Sans jeton valide avec `roles: ["CLIENT"]`, les opérations client ne sont pas autorisées.
+1. Dans la console d’administration Keycloak, créez un realm dédié, par exemple `soapay-prod`. N’utilisez pas le realm `master` pour l’application.
+2. Dans **Clients → Create client**, choisissez **OpenID Connect**, puis créez le client `soapay-api`.
+3. Ce client représente l’audience et héberge les rôles de l’API. SoaPay est un resource server : il ne fait pas de login Keycloak et ne nécessite pas de secret client pour vérifier les JWT.
+4. Dans **Clients → soapay-api → Capability config**, désactivez les flows inutiles pour cette audience : Standard flow, Direct access grants et Service accounts.
+5. Dans **Clients → soapay-api → Roles**, créez les rôles client `CLIENT`, `ADMIN` et `TEST_OPERATOR`.
+6. Créez un client OIDC séparé pour le front-end ou l’application qui connectera les utilisateurs. Pour un navigateur/public client, activez Standard flow, désactivez Client authentication et exigez PKCE `S256`. Limitez les redirect URIs et web origins aux domaines nécessaires.
+
+### 3.2 Ajouter l’audience et les rôles API aux access tokens
+
+1. Dans **Client scopes**, créez un scope dédié, par exemple `soapay-api-audience`.
+2. Dans ce scope, ajoutez un mapper de type **Audience**.
+3. Définissez **Included Client Audience** à `soapay-api` et activez **Add to access token**. L’audience doit figurer dans l’access token, pas uniquement dans l’ID token.
+4. Vérifiez que le mapper des rôles client inclut les rôles de `soapay-api` dans l’access token. Keycloak les place habituellement sous `resource_access.soapay-api.roles`.
+5. Attachez `soapay-api-audience` comme client scope **Default** au client de connexion des utilisateurs. L’access token doit alors contenir `"aud": ["soapay-api", ...]`.
+
+### 3.3 Créer des utilisateurs et leur attribuer des rôles
+
+1. Dans **Users → Add user**, créez un utilisateur de test. Dans **Credentials**, définissez son mot de passe et désactivez **Temporary** si vous souhaitez un compte de test durable.
+2. Depuis **Users → <utilisateur> → Role mapping → Assign role**, sélectionnez **Filter by clients**, choisissez `soapay-api`, puis attribuez `CLIENT`.
+3. Pour les opérations d’administration, créez un compte séparé auquel vous attribuez `ADMIN` et/ou `TEST_OPERATOR`. Ne donnez pas ces rôles au compte client habituel.
+4. Connectez l’utilisateur par Authorization Code + PKCE, puis inspectez localement le payload de l’access token. Il doit ressembler à ceci :
+
+   ```json
+   {
+     "iss": "https://<KEYCLOAK_HOST>/realms/soapay-prod",
+     "sub": "<KEYCLOAK_USER_ID_STABLE>",
+     "aud": ["soapay-api", "login-client"],
+     "resource_access": {
+       "soapay-api": {
+         "roles": ["CLIENT"]
+       }
+     }
+   }
+   ```
+
+   `sub` est l’identifiant utilisé par l’API pour isoler les données du client. Ne collez jamais un véritable access token dans Git, un ticket ou un log public.
+
+### 3.4 Configurer l’issuer
+
+L’issuer est l’URL HTTPS exacte du realm, par exemple `https://<KEYCLOAK_HOST>/realms/soapay-prod`. Copiez le claim `iss` du token ou vérifiez `<issuer>/.well-known/openid-configuration`. N’utilisez ni `localhost`, ni un nom réseau interne Docker, ni une URL d’administration inaccessible depuis Render.
+
+Sans issuer valide ou si Keycloak n’est pas accessible au démarrage, l’application en profil `prod` ne démarre pas. Un jeton sans `aud` contenant `soapay-api` est rejeté en `401`; un jeton valide sans le rôle requis reçoit `403`.
 
 ## 4. Créer le Web Service Render
 
@@ -71,9 +109,13 @@ Dans le service, ouvrez **Environment** et ajoutez ces variables comme secrets o
 | `DATABASE_USERNAME` | Rôle Neon dédié |
 | `DATABASE_PASSWORD` | Mot de passe du rôle Neon |
 | `DATABASE_POOL_MAX_SIZE` | `5` pour commencer, à adapter au plan et à la capacité Neon |
-| `OAUTH_ISSUER_URI` | Issuer HTTPS exact du fournisseur OIDC |
+| `OAUTH_ISSUER_URI` | `https://<KEYCLOAK_HOST>/realms/soapay-prod` |
+| `OIDC_AUDIENCE` | `soapay-api` ; doit apparaître dans `aud` |
+| `KEYCLOAK_API_CLIENT_ID` | `soapay-api` ; identifie la section client dans `resource_access` |
 
 Ne configurez pas `DEMO_CLIENT_PASSWORD` ou `DEMO_ADMIN_PASSWORD` comme solution de sécurité en production ; ces comptes n’existent pas sous le profil `prod`. `API_SIMULATION_RESULT` n’active pas les mocks en production.
+
+Dans Keycloak, `OAUTH_ISSUER_URI` identifie le realm, `OIDC_AUDIENCE` vérifie que le jeton est destiné à SoaPay, et `KEYCLOAK_API_CLIENT_ID` permet de sélectionner les rôles client de l’API. Ces valeurs ont des fonctions différentes et doivent être toutes renseignées.
 
 L’application exécute Flyway au démarrage et applique les migrations présentes dans `src/main/resources/db/migration`. Pour déployer des changements de schéma, assurez-vous que les migrations restent compatibles avec les versions d’application qui se chevauchent pendant un déploiement sans interruption.
 
@@ -90,8 +132,20 @@ L’application exécute Flyway au démarrage et applique les migrations présen
    ORDER BY installed_rank;
    ```
 
-5. Vérifiez qu’un endpoint protégé renvoie `401` sans bearer token. Avec un JWT émis par l’issuer configuré et les rôles appropriés, les endpoints protégés doivent répondre selon leurs règles d’accès.
-6. Vérifiez qu’une création de paiement renvoie `503 PROVIDER_UNAVAILABLE` dans ce prototype en profil `prod`. C’est le comportement prévu tant qu’aucun fournisseur autorisé et réellement intégré n’existe.
+5. Vérifiez qu’un endpoint protégé renvoie `401` sans bearer token.
+6. Avec un access token Keycloak valide contenant `soapay-api` dans `aud` et `CLIENT` dans `resource_access.soapay-api.roles`, la route de lecture des fournisseurs doit répondre `200`.
+7. Un token signé par le bon realm mais sans audience `soapay-api` doit répondre `401`; un token avec la bonne audience mais sans rôle autorisé doit répondre `403`.
+8. Vérifiez qu’une création de paiement renvoie `503 PROVIDER_UNAVAILABLE` dans ce prototype en profil `prod`. C’est le comportement prévu tant qu’aucun fournisseur autorisé et réellement intégré n’existe.
+
+Pour tester un endpoint de lecture protégé, obtenez un access token via le flux Authorization Code/PKCE de votre client, puis stockez-le temporairement dans la variable locale `ACCESS_TOKEN` :
+
+```bash
+curl --fail-with-body \
+   --header "Authorization: Bearer ${ACCESS_TOKEN}" \
+   https://<SERVICE>.onrender.com/api/v1/providers
+```
+
+Ne créez pas un token de production en activant le password grant uniquement pour faciliter ce test. Utilisez le flux PKCE ou un outil client OIDC approuvé par votre organisation.
 
 ## 7. Avant toute exposition publique
 
@@ -110,3 +164,5 @@ L’application exécute Flyway au démarrage et applique les migrations présen
 - [Render : Health Checks](https://render.com/docs/health-checks)
 - [Render : Environment Variables](https://render.com/docs/environment-variables)
 - [Neon : Connect from any application](https://neon.com/docs/connect/connect-from-any-app)
+- [Keycloak : Server Administration Guide](https://www.keycloak.org/docs/latest/server_admin/)
+- [Keycloak : Securing Applications and Services Guide](https://www.keycloak.org/docs/latest/securing_apps/)
