@@ -8,8 +8,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AirtelMoneyMockProvider extends AbstractMockProvider {
-    public AirtelMoneyMockProvider(@Value("${api.simulation.result:SUCCESS}") SimulationResult result,
-                                   @Value("${api.simulation.enabled:true}") boolean enabled) {
-        super(ApiProvider.AIRTEL_MONEY_MOCK, result, enabled);
+    public AirtelMoneyMockProvider(
+            @Value("${api.simulation.result:SUCCESS}") SimulationResult result,
+            @Value("${api.simulation.enabled:true}") boolean enabled) {
+        super(
+            ApiProvider.AIRTEL_MONEY_MOCK, 
+            result, 
+            enabled);
     }
 }

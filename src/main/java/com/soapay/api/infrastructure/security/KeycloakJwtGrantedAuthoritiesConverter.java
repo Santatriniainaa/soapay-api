@@ -40,13 +40,17 @@ final class KeycloakJwtGrantedAuthoritiesConverter implements Converter<Jwt, Col
         return authorities;
     }
 
-    private static void addRoles(LinkedHashSet<GrantedAuthority> authorities, Object rolesClaim) {
+    private static void addRoles(
+            LinkedHashSet<GrantedAuthority> authorities, 
+            Object rolesClaim) {
         if (!(rolesClaim instanceof Collection<?> roles)) {
             return;
         }
         for (Object roleClaim : roles) {
             if (roleClaim instanceof String role && !role.isBlank()) {
-                String normalizedRole = role.startsWith("ROLE_") ? role.substring(5) : role;
+                String normalizedRole = role.startsWith("ROLE_") 
+                        ? role.substring(5) 
+                        : role;
                 authorities.add(new SimpleGrantedAuthority("ROLE_" + normalizedRole));
             }
         }

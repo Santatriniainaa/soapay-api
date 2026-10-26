@@ -16,9 +16,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface SpringApiTransactionRepository extends JpaRepository<ApiTransactionEntity, UUID> {
-    Optional<ApiTransactionEntity> findByClientIdAndIdempotencyKey(String clientId, String idempotencyKey);
+    Optional<ApiTransactionEntity> findByClientIdAndIdempotencyKey(
+            String clientId, 
+            String idempotencyKey);
 
-    Optional<ApiTransactionEntity> findByReferenceAndClientId(String reference, String clientId);
+    Optional<ApiTransactionEntity> findByReferenceAndClientId(
+            String reference, 
+            String clientId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from ApiTransactionEntity p where p.reference = :reference and p.clientId = :clientId")
@@ -28,11 +32,17 @@ public interface SpringApiTransactionRepository extends JpaRepository<ApiTransac
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from ApiTransactionEntity p where p.reference = :reference")
-    Optional<ApiTransactionEntity> findByReferenceForUpdate(@Param("reference") String reference);
+    Optional<ApiTransactionEntity> findByReferenceForUpdate(
+            @Param("reference") String reference);
 
-    Page<ApiTransactionEntity> findByClientIdOrderByCreatedAtDesc(String clientId, Pageable pageable);
+    Page<ApiTransactionEntity> findByClientIdOrderByCreatedAtDesc(
+            String clientId, 
+            Pageable pageable);
 
-    default List<ApiTransactionEntity> findTop100ByClientIdOrderByCreatedAtDesc(String clientId) {
-        return findByClientIdOrderByCreatedAtDesc(clientId, Pageable.ofSize(100)).getContent();
+    default List<ApiTransactionEntity> findTop100ByClientIdOrderByCreatedAtDesc(
+            String clientId) {
+        return findByClientIdOrderByCreatedAtDesc(
+                clientId, 
+                Pageable.ofSize(100)).getContent();
     }
 }

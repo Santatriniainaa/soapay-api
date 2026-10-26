@@ -8,8 +8,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MvolaMockProvider extends AbstractMockProvider {
-    public MvolaMockProvider(@Value("${api.simulation.result:SUCCESS}") SimulationResult result,
-                             @Value("${api.simulation.enabled:true}") boolean enabled) {
-        super(ApiProvider.MVOLA_MOCK, result, enabled);
+    public MvolaMockProvider(
+            @Value("${api.simulation.result:SUCCESS}") SimulationResult result,
+            @Value("${api.simulation.enabled:true}") boolean enabled) {
+        super(
+            ApiProvider.MVOLA_MOCK, 
+            result, 
+            enabled);
     }
 }
