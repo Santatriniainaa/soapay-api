@@ -12,7 +12,10 @@ abstract class AbstractMockProvider implements ApiProviderPort {
     private final SimulationResult result;
     private final boolean enabled;
 
-    AbstractMockProvider(ApiProvider provider, SimulationResult result, boolean enabled) {
+    AbstractMockProvider(
+            ApiProvider provider, 
+            SimulationResult result, 
+            boolean enabled) {
         this.provider = provider;
         this.result = result;
         this.enabled = enabled;
@@ -29,12 +32,16 @@ abstract class AbstractMockProvider implements ApiProviderPort {
     }
 
     @Override
-    public boolean isPhoneNumberValid(String phoneNumber) {
-        return phoneNumber != null && phoneNumber.matches("03[234][0-9]{7}");
+    public boolean isPhoneNumberValid(
+            String phoneNumber) {
+        return phoneNumber != null 
+                && phoneNumber.matches("03[234][0-9]{7}");
     }
 
     @Override
-    public SimulationResult simulateApi(String phoneNumber, BigDecimal amount) {
+    public SimulationResult simulateApi(
+            String phoneNumber, 
+            BigDecimal amount) {
         return result;
     }
 }

@@ -18,19 +18,26 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface SpringApiRefundRepository extends JpaRepository<ApiRefundEntity, UUID> {
-    Optional<ApiRefundEntity> findByClientIdAndIdempotencyKey(String clientId, String idempotencyKey);
+    Optional<ApiRefundEntity> findByClientIdAndIdempotencyKey(
+            String clientId, 
+            String idempotencyKey);
 
-    Optional<ApiRefundEntity> findByReferenceAndClientId(String reference, String clientId);
+    Optional<ApiRefundEntity> findByReferenceAndClientId(
+            String reference, 
+            String clientId);
 
     Page<ApiRefundEntity> findByTransactionReferenceAndClientIdOrderByCreatedAtDesc(
-        String transactionReference,
-        String clientId,
-        Pageable pageable);
+            String transactionReference,
+            String clientId,
+            Pageable pageable);
 
     default List<ApiRefundEntity> findByTransactionReferenceAndClientIdOrderByCreatedAtDesc(
-        String transactionReference,
-        String clientId) {
-        return findByTransactionReferenceAndClientIdOrderByCreatedAtDesc(transactionReference, clientId, Pageable.ofSize(100)).getContent();
+            String transactionReference,
+            String clientId) {
+        return findByTransactionReferenceAndClientIdOrderByCreatedAtDesc(
+                transactionReference, 
+                clientId, 
+                Pageable.ofSize(100)).getContent();
     }
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

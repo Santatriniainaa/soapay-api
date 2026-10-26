@@ -17,19 +17,34 @@ public class ApiService {
     private final ApiTransactionStore store;
     private final ApiCreationService creationService;
 
-    public ApiService(ApiTransactionStore store, ApiCreationService creationService) {
+    public ApiService(
+            ApiTransactionStore store, 
+            ApiCreationService creationService) {
         this.store = store;
         this.creationService = creationService;
     }
 
-    public ApiResponse create(CreateApiRequest request, String key, String clientId) {
-        return creationService.create(request, key, clientId);
+    public ApiResponse create(
+            CreateApiRequest request, 
+            String key, 
+            String clientId) {
+        return creationService.create(
+            request, 
+            key, 
+            clientId);
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse get(String reference, String clientId) {
-        return store.findByReferenceAndClient(reference, clientId).map(ApiService::toResponse)
-                .orElseThrow(() -> new ApiException("TRANSACTION_NOT_FOUND", "Transaction introuvable", 404));
+    public ApiResponse get(
+            String reference, 
+            String clientId) {
+        return store
+            .findByReferenceAndClient(reference, clientId)
+            .map(ApiService::toResponse)
+            .orElseThrow(() -> new ApiException(
+                    "TRANSACTION_NOT_FOUND", 
+                    "Transaction introuvable", 
+                    404));
     }
 
     @Transactional(readOnly = true)
@@ -41,25 +56,49 @@ public class ApiService {
     public List<ApiResponse> list(String clientId, int page, int size) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(size, 1);
-        return store.findRecentByClient(clientId, PageRequest.of(safePage, Math.min(safeSize, 100)))
-                .stream().map(ApiService::toResponse).toList();
+        return store
+            .findRecentByClient(
+                clientId, 
+                PageRequest.of(safePage, Math.min(safeSize, 100)))
+            .stream()
+            .map(ApiService::toResponse)
+            .toList();
     }
 
     @Transactional
     public ApiResponse cancel(String reference, String clientId) {
-        ApiTransaction tx = store.findByReferenceAndClientForUpdate(reference, clientId)
-                .orElseThrow(() -> new ApiException("TRANSACTION_NOT_FOUND", "Transaction introuvable", 404));
-        return toResponse(store.save(tx.transitionTo(ApiStatus.CANCELLED, null, null)));
+        ApiTransaction tx = store
+            .findByReferenceAndClientForUpdate(reference, clientId)
+            .orElseThrow(() -> new ApiException(
+                "TRANSACTION_NOT_FOUND", 
+                "Transaction introuvable", 
+                404));
+        return toResponse(
+            store.save(tx.transitionTo(
+                ApiStatus.CANCELLED, 
+                null, 
+                null)));
     }
 
     @Transactional
     public ApiResponse confirm(String reference) {
-        ApiTransaction tx = store.findByReferenceForUpdate(reference)
-                .orElseThrow(() -> new ApiException("TRANSACTION_NOT_FOUND", "Transaction introuvable", 404));
+        ApiTransaction tx = store
+            .findByReferenceForUpdate(reference)
+            .orElseThrow(() -> new ApiException(
+                "TRANSACTION_NOT_FOUND", 
+                "Transaction introuvable", 
+                404));
         if (tx.status() != ApiStatus.PENDING) {
-            throw new ApiException("INVALID_STATE_TRANSITION", "Seule une transaction en attente peut être confirmée", 409);
+            throw new ApiException(
+                "INVALID_STATE_TRANSITION", 
+                "Seule une transaction en attente peut être confirmée", 
+                409);
         }
-        return toResponse(store.save(tx.transitionTo(ApiStatus.SUCCESS, null, null)));
+        return toResponse(store
+            .save(tx.transitionTo(
+                ApiStatus.SUCCESS, 
+                null, 
+                null)));
     }
 
     private static ApiResponse toResponse(ApiTransaction tx) {

@@ -21,27 +21,33 @@ public class ProviderController {
 
     @GetMapping
     public List<ProviderResponse> list() {
-        return providers.all().entrySet().stream()
-            .map(entry -> new ProviderResponse(
-                entry.getKey().name(),
-                true,
-                entry.getValue().isAvailable()))
-            .toList();
+        return providers
+                .all()
+                .entrySet()
+                .stream()
+                .map(entry -> new ProviderResponse(
+                    entry.getKey().name(),
+                    true,
+                    entry.getValue().isAvailable()))
+                .toList();
     }
 
     @GetMapping("/{providerCode}")
-    public ProviderResponse get(@PathVariable String providerCode) {
+    public ProviderResponse get(
+            @PathVariable String providerCode) {
         ApiProvider provider = parseProvider(providerCode);
         return toResponse(provider);
     }
 
     @GetMapping("/{providerCode}/health")
-    public ProviderResponse health(@PathVariable String providerCode) {
+    public ProviderResponse health(
+            @PathVariable String providerCode) {
         ApiProvider provider = parseProvider(providerCode);
         return toResponse(provider);
     }
 
-    private ProviderResponse toResponse(ApiProvider provider) {
+    private ProviderResponse toResponse(
+            ApiProvider provider) {
         return new ProviderResponse(
                 provider.name(),
                 true,
@@ -61,6 +67,9 @@ public class ProviderController {
         }
     }
 
-    public record ProviderResponse(String code, boolean simulated, boolean available) {
+    public record ProviderResponse(
+            String code, 
+            boolean simulated, 
+            boolean available) {
     }
 }
